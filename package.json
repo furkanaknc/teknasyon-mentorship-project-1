@@ -1,0 +1,29 @@
+{
+  "name": "root",
+  "private": true,
+  "workspaces": [
+    "auth",
+    "list",
+    "profile"
+  ],
+  "scripts": {
+    "start": "lerna run start --parallel --stream",
+    "start:dev": "lerna run start:dev --parallel --stream",
+    "build": "lerna run build",
+    "test": "lerna run test",
+    "clean": "lerna clean --yes && rm -rf node_modules",
+    "bootstrap": "lerna bootstrap",
+    "dev:auth": "cd auth && npm run start:dev",
+    "dev:list": "cd list && npm run start:dev",
+    "dev:profile": "cd profile && npm run start:dev",
+    "prepare": "husky",
+    "lint": "lerna run lint --parallel"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^19.8.0",
+    "@commitlint/config-conventional": "^19.8.0",
+    "eslint-plugin-simple-import-sort": "^12.1.1",
+    "husky": "^9.1.7",
+    "lerna": "^8.2.1"
+  }
+}
