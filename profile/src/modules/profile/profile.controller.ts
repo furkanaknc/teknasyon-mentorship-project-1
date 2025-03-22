@@ -15,7 +15,7 @@ export class ProfileController {
 
   @Get(':userId')
   async findOne(@Param() { userId }: UserIdPayload) {
-    return await this.profileService.findOne(userId);
+    return await this.profileService.findByIdOrThrow(userId);
   }
 
   @Post()
