@@ -3,7 +3,17 @@ import { HydratedDocument, Types } from 'mongoose';
 
 export type ListItemDocument = HydratedDocument<ListItem>;
 
-@Schema({ timestamps: true })
+@Schema({
+  timestamps: true,
+  toJSON: {
+    transform: (doc, ret) => {
+      delete ret.__v;
+      delete ret._id;
+      return ret;
+    },
+    virtuals: true,
+  },
+})
 export class ListItem {
   @Prop({ type: Types.ObjectId, required: true, ref: 'List' })
   list_id: Types.ObjectId;

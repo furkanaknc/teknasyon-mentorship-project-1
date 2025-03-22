@@ -1,9 +1,9 @@
 import { Body, Controller, Delete, Get, Param, Post, Put } from '@nestjs/common';
 
-import { ListIdParam } from '../../validations/common/id.validation';
-import { createListPayload } from '../../validations/list.validation';
-import { ListService } from './list.service';
-import { List } from './schemas/list.schema';
+import { ListIdParam } from '../../../validations/common/id.validation';
+import { createListPayload } from '../../../validations/list.validation';
+import { List } from '../schemas/list.schema';
+import { ListService } from '../services/list.service';
 
 @Controller('lists')
 export class ListController {
@@ -16,7 +16,7 @@ export class ListController {
 
   @Get(':listId')
   async findOneList(@Param() { listId }: ListIdParam) {
-    return this.listService.findOneList(listId);
+    return this.listService.findByIdOrThrow(listId);
   }
 
   @Get('slug/:slug')
