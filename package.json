@@ -2,9 +2,8 @@
   "name": "root",
   "private": true,
   "workspaces": [
-    "auth",
-    "list",
-    "profile"
+    "src/apps/*",
+    "src/packages/*"
   ],
   "scripts": {
     "start": "lerna run start --parallel --stream",
@@ -13,9 +12,11 @@
     "test": "lerna run test",
     "clean": "lerna clean --yes && rm -rf node_modules",
     "bootstrap": "lerna bootstrap",
-    "dev:auth": "cd auth && npm run start:dev",
-    "dev:list": "cd list && npm run start:dev",
-    "dev:profile": "cd profile && npm run start:dev",
+    "dev:auth": "cd src/apps/auth && npm run start:dev",
+    "dev:list": "cd src/apps/list && npm run start:dev",
+    "dev:profile": "cd src/apps/profile && npm run start:dev",
+    "dev:web": "cd src/apps/web && npm run dev",
+    "storybook": "cd src/apps/web && npm run storybook",
     "prepare": "husky",
     "lint": "lerna run lint --parallel"
   },
