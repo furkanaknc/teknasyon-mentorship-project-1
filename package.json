@@ -26,5 +26,12 @@
     "eslint-plugin-simple-import-sort": "^12.1.1",
     "husky": "^9.1.7",
     "lerna": "^8.2.1"
+  },
+  "dependencies": {
+    "@nestjs/cache-manager": "^3.0.1",
+    "@types/redis": "^4.0.10",
+    "cache-manager": "^6.4.3",
+    "cache-manager-redis-yet": "^5.1.5",
+    "redis": "^5.0.1"
   }
 }
