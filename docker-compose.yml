@@ -1,0 +1,97 @@
+services:
+  app_list:
+    container_name: app_list
+    build:
+      context: .
+      dockerfile: list.Dockerfile
+    environment:
+      - DATABASE_URL=mongodb://database:27017/teknasyon-app
+      - REDIS_URL=redis://cache:6379
+      - REDIS_TTL=3600
+      - AUTH_PORT=3001
+      - LIST_PORT=3002
+      - PROFILE_PORT=3003
+    ports:
+      - 3002:3002
+    volumes:
+      - ./src/apps/list:/app
+      - /app/node_modules
+    networks:
+      - teknasyon-network
+    depends_on:
+      - database
+      - cache
+
+  app_profile:
+    container_name: app_profile
+    build:
+      context: .
+      dockerfile: profile.Dockerfile
+    environment:
+      - DATABASE_URL=mongodb://database:27017/teknasyon-app
+      - REDIS_URL=redis://cache:6379
+      - REDIS_TTL=3600
+      - AUTH_PORT=3001
+      - LIST_PORT=3002
+      - PROFILE_PORT=3003
+    ports:
+      - 3003:3003
+    volumes:
+      - ./src/apps/profile:/app
+      - /app/node_modules
+    networks:
+      - teknasyon-network
+    depends_on:
+      - database
+      - cache
+
+  app_web:
+    container_name: app_web
+    build:
+      context: .
+      dockerfile: web.Dockerfile
+    environment:
+      - NODE_ENV=development
+    ports:
+      - 3000:3000
+    volumes:
+      - ./src/apps/web:/app
+      - /app/node_modules
+    networks:
+      - teknasyon-network
+    depends_on:
+      - app_list
+      - app_profile
+
+  database:
+    image: mongo:latest
+    container_name: database
+    volumes:
+      - mongodb_data:/data/db
+    ports:
+      - 27017:27017
+    restart: unless-stopped
+    networks:
+      - teknasyon-network
+
+  cache:
+    image: redis:alpine
+    container_name: cache
+    restart: always
+    command: redis-server --appendonly yes
+    ports:
+      - "6380:6379" # Map to port 6380 on host to avoid conflicts
+    networks:
+      - teknasyon-network
+    volumes:
+      - redis_data:/data
+
+networks:
+  teknasyon-network:
+    driver: bridge
+
+volumes:
+  mongodb_data:
+    driver: local
+  redis_data:
+    driver: local
