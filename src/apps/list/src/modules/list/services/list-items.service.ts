@@ -12,38 +12,36 @@ export class ListItemsService {
   async findByIdOrThrow(id: string): Promise<ListItem> {
     const listItem = await this.listItemModel.findById(id).exec();
 
-    if (!listItem) throw new NotFoundException('List item not found');
+    if (!listItem) {
+      throw new NotFoundException('List item not found');
+    }
 
     return listItem;
   }
 
   async createListItem(payload: CreateListItemPayload): Promise<ListItem> {
     const createdListItem = new this.listItemModel(payload);
-
-    return createdListItem.save();
+    return await createdListItem.save();
   }
 
   async updateListItem(id: string, payload: UpdateListItemPayload): Promise<ListItem> {
     await this.findByIdOrThrow(id);
-
-    return this.listItemModel.findByIdAndUpdate(id, payload, { new: true }).exec() as Promise<ListItem>;
+    return (await this.listItemModel.findByIdAndUpdate(id, payload, { new: true }).exec()) as ListItem;
   }
 
   async findAllListItems(listId: string): Promise<ListItem[]> {
-    return this.listItemModel.find({ list_id: new Types.ObjectId(listId) }).exec();
+    return await this.listItemModel.find({ list_id: new Types.ObjectId(listId) }).exec();
   }
 
   async removeListItem(id: string): Promise<ListItem> {
     await this.findByIdOrThrow(id);
-
-    return this.listItemModel.findByIdAndDelete(id).exec() as Promise<ListItem>;
+    return (await this.listItemModel.findByIdAndDelete(id).exec()) as ListItem;
   }
 
   async toggleListItemCheck(id: string): Promise<ListItem> {
     const listItem = await this.findByIdOrThrow(id);
-
-    return this.listItemModel
+    return (await this.listItemModel
       .findByIdAndUpdate(id, { check: !listItem.check }, { new: true })
-      .exec() as Promise<ListItem>;
+      .exec()) as ListItem;
   }
 }

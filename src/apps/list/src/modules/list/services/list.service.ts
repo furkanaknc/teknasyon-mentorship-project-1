@@ -23,11 +23,11 @@ export class ListService {
     }
 
     const list = await this.listModel.findById(id).exec();
-
-    if (!list) throw new NotFoundException('List not found');
+    if (!list) {
+      throw new NotFoundException('List not found');
+    }
 
     await this.redisService.set(cacheKey, list, 300);
-
     return list;
   }
 
@@ -39,19 +39,17 @@ export class ListService {
     }
 
     const list = await this.listModel.findOne({ slug }).exec();
-
-    if (!list) throw new NotFoundException('List not found');
+    if (!list) {
+      throw new NotFoundException('List not found');
+    }
 
     await this.redisService.set(cacheKey, list, 300);
-
     return list;
   }
 
   async createList(payload: createListPayload): Promise<List> {
     const createdList = await new this.listModel(payload).save();
-
     await this.redisService.del('all_lists');
-
     return createdList;
   }
 
@@ -65,7 +63,6 @@ export class ListService {
 
     await this.redisService.del(`list:${id}`);
     await this.redisService.del('all_lists');
-
     return updatedList;
   }
 
@@ -77,9 +74,7 @@ export class ListService {
     }
 
     const lists = await this.listModel.find().exec();
-
     await this.redisService.set(cacheKey, lists, 300);
-
     return lists;
   }
 
@@ -95,7 +90,6 @@ export class ListService {
 
     await this.redisService.del(`list:${id}`);
     await this.redisService.del('all_lists');
-
     return removedList;
   }
 }

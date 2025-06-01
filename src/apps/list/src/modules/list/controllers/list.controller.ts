@@ -11,31 +11,31 @@ export class ListController {
 
   @Get()
   async findAllLists() {
-    return this.listService.findAllLists();
+    return await this.listService.findAllLists();
   }
 
   @Get(':listId')
   async findOneList(@Param() { listId }: ListIdParam) {
-    return this.listService.findByIdOrThrow(listId);
+    return await this.listService.findByIdOrThrow(listId);
   }
 
   @Get('slug/:slug')
   async findListBySlug(@Param('slug') slug: string) {
-    return this.listService.findListBySlug(slug);
+    return await this.listService.findListBySlug(slug);
   }
 
   @Post()
   async createList(@Body() payload: createListPayload) {
-    return this.listService.createList(payload);
+    return await this.listService.createList(payload);
   }
 
   @Put(':listId')
   async updateList(@Param() { listId }: ListIdParam, @Body() updateListDto: Partial<List>) {
-    return this.listService.updateList(listId, updateListDto);
+    return await this.listService.updateList(listId, updateListDto);
   }
 
   @Delete(':listId')
   async removeList(@Param() { listId }: ListIdParam) {
-    return this.listService.removeList(listId);
+    return await this.listService.removeList(listId);
   }
 }

@@ -16,31 +16,31 @@ export class ListItemController {
       list_id: new Types.ObjectId(listId),
     };
 
-    return this.listItemService.createListItem(listItemData);
+    return await this.listItemService.createListItem(listItemData);
   }
 
   @Get('list/:listId')
   async findAllListItems(@Param() { listId }: ListIdParam) {
-    return this.listItemService.findAllListItems(listId);
+    return await this.listItemService.findAllListItems(listId);
   }
 
   @Get(':listItemId')
   async findOneListItem(@Param() { listItemId }: ListItemsIdParam) {
-    return this.listItemService.findByIdOrThrow(listItemId);
+    return await this.listItemService.findByIdOrThrow(listItemId);
   }
 
   @Put(':listItemId')
   async updateListItem(@Param() { listItemId }: ListItemsIdParam, @Body() payload: UpdateListItemPayload) {
-    return this.listItemService.updateListItem(listItemId, payload);
+    return await this.listItemService.updateListItem(listItemId, payload);
   }
 
   @Put(':listItemId/toggle')
   async toggleListItemCheck(@Param() { listItemId }: ListItemsIdParam) {
-    return this.listItemService.toggleListItemCheck(listItemId);
+    return await this.listItemService.toggleListItemCheck(listItemId);
   }
 
   @Delete(':listItemId')
   async removeListItem(@Param() { listItemId }: ListItemsIdParam) {
-    return this.listItemService.removeListItem(listItemId);
+    return await this.listItemService.removeListItem(listItemId);
   }
 }
