@@ -4,12 +4,14 @@ import { MongooseModule } from '@nestjs/mongoose';
 
 import { EnvironmentModule } from './modules/common/environment/environment.module';
 import { EnvironmentService } from './modules/common/environment/environment.service';
+import { LoggerModule } from './modules/common/logger/logger.module';
 import { RedisModule } from './modules/common/redis/redis.module';
 import { ProfileModule } from './modules/profile/profile.module';
 
 @Module({
   imports: [
     EnvironmentModule,
+    LoggerModule,
     ConfigModule.forRoot({
       isGlobal: true,
     }),
