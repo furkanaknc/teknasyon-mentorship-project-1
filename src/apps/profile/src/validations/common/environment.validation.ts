@@ -5,6 +5,9 @@ export const envSchema = z.object({
 
   DATABASE_URL: z.string(),
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
+
+  JWT_ACCESS_SECRET: z.string().min(1),
+  AUTH_SERVICE_URL: z.string().min(1),
 });
 
 export type EnvVariables = z.infer<typeof envSchema>;

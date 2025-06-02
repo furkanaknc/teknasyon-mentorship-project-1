@@ -1,5 +1,12 @@
-import { ArgumentsHost, Catch, ExceptionFilter, HttpException, HttpStatus, Logger } from '@nestjs/common';
+import { ArgumentsHost, Catch, ExceptionFilter, HttpException, Logger } from '@nestjs/common';
 import { Request, Response } from 'express';
+import { ZodError } from 'zod';
+
+import { AppError } from '../errors/app-error';
+import { InternalError } from '../errors/internal.error';
+import { transformHTTPException } from '../errors/transformers/http-exception.transformer';
+import { transformZodError } from '../errors/transformers/zod-error.transformer';
+import { UnauthorizedError } from '../errors/unauthorized.error';
 
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {
@@ -10,24 +17,46 @@ export class AllExceptionsFilter implements ExceptionFilter {
     const response = ctx.getResponse<Response>();
     const request = ctx.getRequest<Request>();
 
-    const status = exception instanceof HttpException ? exception.getStatus() : HttpStatus.INTERNAL_SERVER_ERROR;
+    let appError: AppError;
 
-    const message = exception instanceof HttpException ? exception.getResponse() : 'Internal server error';
+    // Handle our custom AppError instances (including shared auth errors)
+    if (exception instanceof AppError) {
+      appError = exception;
+    }
+    // Handle Zod validation errors
+    else if (exception instanceof ZodError) {
+      appError = transformZodError(exception);
+    }
+    // Handle NestJS HTTP exceptions
+    else if (exception instanceof HttpException) {
+      appError = transformHTTPException(exception);
+    }
+    // Handle authentication errors (from shared auth library)
+    else if (exception instanceof Error && exception.message === 'No token provided') {
+      appError = new UnauthorizedError({ message: exception.message });
+    }
+    // Handle JWT related errors
+    else if (exception instanceof Error && (exception.message.includes('jwt') || exception.message.includes('token'))) {
+      appError = new UnauthorizedError({ message: 'Invalid token' });
+    }
+    // Handle any other errors as internal server error
+    else {
+      appError = new InternalError({
+        message: exception instanceof Error ? exception.message : 'Internal server error',
+      });
+    }
+
+    const errorResponse = appError.toJSON();
 
     this.logger.error({
-      statusCode: status,
+      error: errorResponse.error,
+      statusCode: appError.statusCode,
       timestamp: new Date().toISOString(),
       path: request.url,
       method: request.method,
-      message: typeof message === 'string' ? message : JSON.stringify(message),
       stack: exception instanceof Error ? exception.stack : undefined,
     });
 
-    response.status(status).json({
-      statusCode: status,
-      timestamp: new Date().toISOString(),
-      path: request.url,
-      message: typeof message === 'string' ? message : message,
-    });
+    response.status(appError.statusCode).json(errorResponse);
   }
 }
