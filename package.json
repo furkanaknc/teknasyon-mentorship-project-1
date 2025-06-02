@@ -15,6 +15,7 @@
     "dev:auth": "cd src/apps/auth && npm run start:dev",
     "dev:list": "cd src/apps/list && npm run start:dev",
     "dev:profile": "cd src/apps/profile && npm run start:dev",
+    "dev:gateway": "cd src/apps/gateway && npm run start:dev",
     "dev:web": "cd src/apps/web && npm run dev",
     "storybook": "cd src/apps/web && npm run storybook",
     "prepare": "husky",
