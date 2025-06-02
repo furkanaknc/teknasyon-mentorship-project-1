@@ -16,15 +16,12 @@ export class AllExceptionsFilter implements ExceptionFilter {
     let message: any;
 
     if (exception instanceof AppError) {
-      // Handle our custom application errors
       status = exception.statusCode;
       message = exception.toJSON();
     } else if (exception instanceof HttpException) {
-      // Handle NestJS HTTP exceptions
       status = exception.getStatus();
       message = exception.getResponse();
     } else {
-      // Handle generic errors
       status = HttpStatus.INTERNAL_SERVER_ERROR;
       message = 'Internal server error';
     }

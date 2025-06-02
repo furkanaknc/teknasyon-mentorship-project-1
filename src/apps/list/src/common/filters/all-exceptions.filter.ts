@@ -20,28 +20,20 @@ export class AllExceptionsFilter implements ExceptionFilter {
 
     let appError: AppError;
 
-    // Handle our custom AppError instances
     if (exception instanceof AppError) {
       appError = exception;
-    }
-    // Handle Zod validation errors
-    else if (exception instanceof ZodError) {
+    } else if (exception instanceof ZodError) {
       appError = transformZodError(exception);
-    }
-    // Handle NestJS HTTP exceptions
-    else if (exception instanceof HttpException) {
+    } else if (exception instanceof HttpException) {
       appError = transformHTTPException(exception);
-    }
-    // Handle authentication errors (from shared auth library)
-    else if (exception instanceof Error && exception.message === 'No token provided') {
+    } else if (exception instanceof Error && exception.message === 'No token provided') {
       appError = new UnauthorizedError({ message: exception.message });
-    }
-    // Handle JWT related errors
-    else if (exception instanceof Error && (exception.message.includes('jwt') || exception.message.includes('token'))) {
+    } else if (
+      exception instanceof Error &&
+      (exception.message.includes('jwt') || exception.message.includes('token'))
+    ) {
       appError = new UnauthorizedError({ message: 'Invalid token' });
-    }
-    // Handle any other errors as internal server error
-    else {
+    } else {
       appError = new InternalError({
         message: exception instanceof Error ? exception.message : 'Internal server error',
       });

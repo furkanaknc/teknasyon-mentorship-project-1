@@ -52,19 +52,17 @@ export class ListService {
     try {
       const listData = {
         ...payload,
-        userId: new Types.ObjectId(userId), // Associate the list with the authenticated user
+        userId: new Types.ObjectId(userId),
       };
       const createdList = await new this.listModel(listData).save();
       await this.redisService.del('all_lists');
       return createdList;
     } catch (error: any) {
-      // Handle MongoDB duplicate key error for slug
       if (error.code === 11000 && error.keyPattern?.slug) {
         throw new ConflictError({
           message: `A list with slug '${payload.slug}' already exists`,
         });
       }
-      // Re-throw other errors
       throw error;
     }
   }
@@ -72,7 +70,6 @@ export class ListService {
   async updateList(id: string, payload: updateListPayload, userId?: string): Promise<List> {
     await this.findByIdOrThrow(id);
 
-    // If userId is provided, ensure the user can only update their own lists
     const filter = userId ? { _id: id, userId: new Types.ObjectId(userId) } : { _id: id };
 
     const updatedList = await this.listModel.findOneAndUpdate(filter, payload, { new: true }).exec();
@@ -100,7 +97,6 @@ export class ListService {
   async removeList(id: string, userId?: string): Promise<List> {
     await this.findByIdOrThrow(id);
 
-    // If userId is provided, ensure the user can only delete their own lists
     const filter = userId ? { _id: id, userId: new Types.ObjectId(userId) } : { _id: id };
 
     await this.listItemModel.deleteMany({ list_id: new Types.ObjectId(id) });
