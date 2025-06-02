@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 
+import { ConflictError } from '../../../common/errors/conflict.error';
 import { createListPayload, updateListPayload } from '../../../validations/list.validation';
 import { RedisService } from '../../common/redis/redis.service';
 import { List, ListDocument } from '../schemas/list.schema';
@@ -47,18 +48,36 @@ export class ListService {
     return list;
   }
 
-  async createList(payload: createListPayload): Promise<List> {
-    const createdList = await new this.listModel(payload).save();
-    await this.redisService.del('all_lists');
-    return createdList;
+  async createList(payload: createListPayload, userId: string): Promise<List> {
+    try {
+      const listData = {
+        ...payload,
+        userId: new Types.ObjectId(userId), // Associate the list with the authenticated user
+      };
+      const createdList = await new this.listModel(listData).save();
+      await this.redisService.del('all_lists');
+      return createdList;
+    } catch (error: any) {
+      // Handle MongoDB duplicate key error for slug
+      if (error.code === 11000 && error.keyPattern?.slug) {
+        throw new ConflictError({
+          message: `A list with slug '${payload.slug}' already exists`,
+        });
+      }
+      // Re-throw other errors
+      throw error;
+    }
   }
 
-  async updateList(id: string, payload: updateListPayload): Promise<List> {
+  async updateList(id: string, payload: updateListPayload, userId?: string): Promise<List> {
     await this.findByIdOrThrow(id);
 
-    const updatedList = await this.listModel.findByIdAndUpdate(id, payload, { new: true }).exec();
+    // If userId is provided, ensure the user can only update their own lists
+    const filter = userId ? { _id: id, userId: new Types.ObjectId(userId) } : { _id: id };
+
+    const updatedList = await this.listModel.findOneAndUpdate(filter, payload, { new: true }).exec();
     if (!updatedList) {
-      throw new NotFoundException(`List with id ${id} not found`);
+      throw new NotFoundException(`List with id ${id} not found or you don't have permission to update it`);
     }
 
     await this.redisService.del(`list:${id}`);
@@ -78,14 +97,17 @@ export class ListService {
     return lists;
   }
 
-  async removeList(id: string): Promise<List> {
+  async removeList(id: string, userId?: string): Promise<List> {
     await this.findByIdOrThrow(id);
+
+    // If userId is provided, ensure the user can only delete their own lists
+    const filter = userId ? { _id: id, userId: new Types.ObjectId(userId) } : { _id: id };
 
     await this.listItemModel.deleteMany({ list_id: new Types.ObjectId(id) });
 
-    const removedList = await this.listModel.findByIdAndDelete(id).exec();
+    const removedList = await this.listModel.findOneAndDelete(filter).exec();
     if (!removedList) {
-      throw new NotFoundException(`List with id ${id} not found`);
+      throw new NotFoundException(`List with id ${id} not found or you don't have permission to delete it`);
     }
 
     await this.redisService.del(`list:${id}`);

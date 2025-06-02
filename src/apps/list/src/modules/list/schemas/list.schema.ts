@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { HydratedDocument } from 'mongoose';
+import { HydratedDocument, Types } from 'mongoose';
 
 export type ListDocument = HydratedDocument<List>;
 
@@ -29,6 +29,9 @@ export class List {
 
   @Prop({ type: [String], default: [] })
   edit_allowed_user: string[];
+
+  @Prop({ type: Types.ObjectId, required: true })
+  userId: Types.ObjectId;
 }
 
 export const ListSchema = SchemaFactory.createForClass(List);
