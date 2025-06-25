@@ -7,6 +7,7 @@ import { JwtGuard, SharedAuthModule } from '@teknasyon/shared-auth';
 
 import { LoggerInterceptor } from '../common/interceptors';
 import { clientMetaMiddleware, methodFilterMiddleware, reqMetaMiddleware } from '../common/middlewares';
+import { AuthController, ListController, ListItemsController, ProfileController } from '../controllers';
 import { gatewayEnvSchema } from '../validations/env.validation';
 import { AppController } from './app.controller';
 import { ProxyService } from './proxy.service';
@@ -32,7 +33,7 @@ import { ProxyService } from './proxy.service';
       jwtSecret: process.env.JWT_SECRET || 'teknasyon-secret-key-2024',
     }),
   ],
-  controllers: [AppController],
+  controllers: [AppController, AuthController, ListController, ListItemsController, ProfileController],
   providers: [
     ProxyService,
     {
