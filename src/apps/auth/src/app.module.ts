@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
 import { MongooseModule } from '@nestjs/mongoose';
 
+import { AppController } from './app.controller';
 import { JwtGuard } from './common/guards/jwt.guard';
 import { AuthModule } from './modules/auth/auth.module';
 import { EnvironmentModule } from './modules/common/environment/environment.module';
@@ -27,7 +28,7 @@ import { RedisModule } from './modules/common/redis/redis.module';
     }),
     AuthModule,
   ],
-  controllers: [],
+  controllers: [AppController],
   providers: [
     {
       provide: APP_GUARD,
