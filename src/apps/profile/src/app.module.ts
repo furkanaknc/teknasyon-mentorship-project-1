@@ -4,6 +4,7 @@ import { APP_GUARD } from '@nestjs/core';
 import { MongooseModule } from '@nestjs/mongoose';
 import { JwtGuard, SharedAuthModule } from '@teknasyon/shared-auth';
 
+import { AppController } from './app.controller';
 import { EnvironmentModule } from './modules/common/environment/environment.module';
 import { EnvironmentService } from './modules/common/environment/environment.service';
 import { LoggerModule } from './modules/common/logger/logger.module';
@@ -35,6 +36,7 @@ import { ProfileModule } from './modules/profile/profile.module';
     }),
     ProfileModule,
   ],
+  controllers: [AppController],
   providers: [
     {
       provide: APP_GUARD,
