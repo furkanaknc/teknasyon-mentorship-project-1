@@ -1,6 +1,7 @@
 import { HttpService } from '@nestjs/axios';
-import { Injectable, Logger } from '@nestjs/common';
+import { HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { AxiosResponse } from 'axios';
+import { Request, Response } from 'express';
 import { catchError, map, Observable, timeout } from 'rxjs';
 
 export interface ServiceConfig {
@@ -90,6 +91,78 @@ export class ProxyService {
         throw error;
       }),
     );
+  }
+
+  async proxyToService(
+    serviceName: string,
+    method: string,
+    path: string,
+    body: any,
+    req: Request,
+    res: Response,
+  ): Promise<void> {
+    try {
+      const forwardHeaders = { ...req.headers };
+      delete forwardHeaders.host;
+      delete forwardHeaders.connection;
+      delete forwardHeaders['content-length'];
+
+      forwardHeaders['x-forwarded-by'] = 'gateway';
+      forwardHeaders['x-original-path'] = req.path;
+
+      this.logger.debug(`Proxying ${method} ${req.path} -> ${serviceName} service at ${path}`);
+
+      const proxyResponse = await this.proxyRequest(
+        serviceName,
+        method,
+        path,
+        body,
+        forwardHeaders,
+        req.query,
+      ).toPromise();
+
+      // Forward response headers
+      Object.keys(proxyResponse.headers).forEach((key) => {
+        if (key.toLowerCase() !== 'content-encoding') {
+          res.set(key, proxyResponse.headers[key]);
+        }
+      });
+
+      res.status(proxyResponse.status).json(proxyResponse.data);
+    } catch (error) {
+      this.handleProxyError(error, serviceName, res);
+    }
+  }
+
+  private handleProxyError(error: any, serviceName: string, res: Response): void {
+    this.logger.error(`Error proxying to ${serviceName}:`, error.response?.data || error.message);
+
+    if (error.response) {
+      const statusCode = error.response.status || HttpStatus.INTERNAL_SERVER_ERROR;
+      const errorData = error.response.data || {
+        message: 'Service error',
+        statusCode,
+      };
+      res.status(statusCode).json(errorData);
+    } else if (error.code === 'ECONNREFUSED' || error.code === 'ENOTFOUND') {
+      res.status(HttpStatus.SERVICE_UNAVAILABLE).json({
+        message: `Service ${serviceName} is unavailable`,
+        statusCode: HttpStatus.SERVICE_UNAVAILABLE,
+        error: 'Service Unavailable',
+      });
+    } else if (error.name === 'TimeoutError') {
+      res.status(HttpStatus.REQUEST_TIMEOUT).json({
+        message: `Request to ${serviceName} timed out`,
+        statusCode: HttpStatus.REQUEST_TIMEOUT,
+        error: 'Request Timeout',
+      });
+    } else {
+      res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
+        message: 'Internal gateway error',
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+        error: 'Internal Server Error',
+      });
+    }
   }
 
   async healthCheck(serviceName?: string): Promise<Record<string, boolean>> {
