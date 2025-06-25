@@ -37,7 +37,7 @@ export class LoggerInterceptor implements NestInterceptor {
           url,
           statusCode: response.statusCode,
           responseTime: `${responseTime}ms`,
-          responseSize: JSON.stringify(responseData).length,
+          responseSize: responseData ? JSON.stringify(responseData).length : 0,
         });
       }),
     );
