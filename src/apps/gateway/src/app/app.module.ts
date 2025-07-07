@@ -30,7 +30,7 @@ import { ProxyService } from './proxy.service';
       },
     ]),
     SharedAuthModule.forRoot({
-      jwtSecret: process.env.JWT_SECRET || 'teknasyon-secret-key-2024',
+      jwtSecret: process.env.JWT_SECRET,
     }),
   ],
   controllers: [AppController, AuthController, ListController, ListItemsController, ProfileController],
