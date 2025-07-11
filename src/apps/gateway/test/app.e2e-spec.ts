@@ -20,217 +20,268 @@ describe('Gateway E2E Tests', () => {
     await app.close();
   });
 
-  describe('/api/health (GET)', () => {
-    it('should return gateway health status', () => {
-      return request(app.getHttpServer())
-        .get('/api/health')
-        .expect(200)
-        .expect((res) => {
-          expect(res.body).toHaveProperty('status');
-          expect(res.body).toHaveProperty('timestamp');
-          expect(res.body).toHaveProperty('services');
-          expect(typeof res.body.services).toBe('object');
-        });
+  describe('Health Check Endpoints', () => {
+    it('should return gateway health status with all required properties', async () => {
+      const response = await request(app.getHttpServer()).get('/api/health').expect(200);
+
+      expect(response.body).toHaveProperty('status');
+      expect(response.body).toHaveProperty('timestamp');
+      expect(response.body).toHaveProperty('services');
+      expect(typeof response.body.status).toBe('string');
+      expect(typeof response.body.timestamp).toBe('string');
+      expect(typeof response.body.services).toBe('object');
     });
 
-    it('should include all required services in health check', () => {
-      return request(app.getHttpServer())
-        .get('/api/health')
-        .expect(200)
-        .expect((res) => {
-          const services = res.body.services;
-          expect(services).toHaveProperty('auth');
-          expect(services).toHaveProperty('list');
-          expect(services).toHaveProperty('profile');
-        });
+    it('should include all required services in health check', async () => {
+      const response = await request(app.getHttpServer()).get('/api/health').expect(200);
+
+      const services = response.body.services;
+      expect(services).toHaveProperty('auth');
+      expect(services).toHaveProperty('list');
+      expect(services).toHaveProperty('profile');
+
+      // Each service should have a boolean status
+      Object.keys(services).forEach((serviceName) => {
+        expect(typeof services[serviceName]).toBe('boolean');
+      });
+    });
+
+    it('should return auth service health', async () => {
+      const response = await request(app.getHttpServer()).get('/api/auth/health');
+
+      expect([200, 503]).toContain(response.status);
+
+      if (response.status === 200) {
+        expect(response.body).toHaveProperty('status');
+        expect(typeof response.body.status).toBe('string');
+      }
+    });
+
+    it('should return list service health', async () => {
+      const response = await request(app.getHttpServer()).get('/api/list/health');
+
+      expect([200, 503]).toContain(response.status);
+
+      if (response.status === 200) {
+        expect(response.body).toHaveProperty('status');
+        expect(typeof response.body.status).toBe('string');
+      }
+    });
+
+    it('should return profile service health', async () => {
+      const response = await request(app.getHttpServer()).get('/api/profile/health');
+
+      expect([200, 503]).toContain(response.status);
+
+      if (response.status === 200) {
+        expect(response.body).toHaveProperty('status');
+        expect(typeof response.body.status).toBe('string');
+      }
     });
   });
 
-  describe('/api/auth (Auth Controller)', () => {
-    describe('POST /api/auth/login', () => {
-      it('should handle login request', () => {
-        return request(app.getHttpServer())
-          .post('/api/auth/login')
-          .send({
-            email: 'test@example.com',
-            password: 'password123',
-          })
-          .expect((res) => {
-            expect([200, 503]).toContain(res.status);
-          });
+  describe('Authentication Endpoints', () => {
+    it('should handle valid login request with proper response structure', async () => {
+      const response = await request(app.getHttpServer()).post('/api/auth/login').send({
+        email: 'test@example.com',
+        password: 'password123',
       });
 
-      it('should require email and password', () => {
-        return request(app.getHttpServer())
-          .post('/api/auth/login')
-          .send({})
-          .expect((res) => {
-            expect([400, 503]).toContain(res.status);
-          });
-      });
+      expect([200, 503]).toContain(response.status);
+
+      if (response.status === 200) {
+        expect(response.body).toHaveProperty('token');
+        expect(response.body).toHaveProperty('user');
+        expect(typeof response.body.token).toBe('string');
+        expect(typeof response.body.user).toBe('object');
+        expect(response.body.user).toHaveProperty('email');
+        expect(response.body.user.email).toBe('test@example.com');
+      }
     });
 
-    describe('POST /api/auth/register', () => {
-      it('should handle register request', () => {
-        return request(app.getHttpServer())
-          .post('/api/auth/register')
-          .send({
-            email: 'newuser@example.com',
-            password: 'password123',
-            username: 'newuser',
-          })
-          .expect((res) => {
-            expect([200, 201, 503]).toContain(res.status);
-          });
-      });
+    it('should require email and password for login', async () => {
+      const response = await request(app.getHttpServer()).post('/api/auth/login').send({});
+
+      expect([400, 503]).toContain(response.status);
+
+      if (response.status === 400) {
+        expect(response.body).toHaveProperty('message');
+        expect(Array.isArray(response.body.message) || typeof response.body.message === 'string').toBe(true);
+      }
     });
 
-    describe('GET /api/auth/health', () => {
-      it('should return auth service health', () => {
-        return request(app.getHttpServer())
-          .get('/api/auth/health')
-          .expect((res) => {
-            expect([200, 503]).toContain(res.status);
-          });
+    it('should handle registration with proper response structure', async () => {
+      const response = await request(app.getHttpServer()).post('/api/auth/register').send({
+        email: 'newuser@example.com',
+        password: 'password123',
+        username: 'newuser',
       });
+
+      expect([200, 201, 503]).toContain(response.status);
+
+      if ([200, 201].includes(response.status)) {
+        expect(response.body).toHaveProperty('user');
+        expect(typeof response.body.user).toBe('object');
+        expect(response.body.user).toHaveProperty('email');
+        expect(response.body.user).toHaveProperty('username');
+        expect(response.body.user.email).toBe('newuser@example.com');
+        expect(response.body.user.username).toBe('newuser');
+      }
     });
 
-    describe('GET /api/auth/verify', () => {
-      it('should handle token verification without token', () => {
-        return request(app.getHttpServer())
-          .get('/api/auth/verify')
-          .expect((res) => {
-            expect([401, 503]).toContain(res.status);
-          });
-      });
+    it('should handle token verification without token', async () => {
+      const response = await request(app.getHttpServer()).get('/api/auth/verify');
 
-      it('should handle token verification with invalid token', () => {
-        return request(app.getHttpServer())
-          .get('/api/auth/verify')
-          .set('Authorization', 'Bearer invalid-token')
-          .expect((res) => {
-            expect([401, 503]).toContain(res.status);
-          });
-      });
-    });
-  });
+      expect([401, 503]).toContain(response.status);
 
-  describe('/api/list (List Controller)', () => {
-    describe('GET /api/list/lists', () => {
-      it('should handle get all lists request', () => {
-        return request(app.getHttpServer())
-          .get('/api/list/lists')
-          .expect((res) => {
-            expect([200, 503]).toContain(res.status);
-            if (res.status === 200) {
-              expect(Array.isArray(res.body)).toBe(true);
-            }
-          });
-      });
+      if (response.status === 401) {
+        expect(response.body).toHaveProperty('message');
+        expect(typeof response.body.message).toBe('string');
+      }
     });
 
-    describe('GET /api/list/lists/:listId', () => {
-      it('should handle get specific list request', () => {
-        const testListId = 'test-list-id';
-        return request(app.getHttpServer())
-          .get(`/api/list/lists/${testListId}`)
-          .expect((res) => {
-            expect([200, 404, 503]).toContain(res.status);
-          });
-      });
-    });
+    it('should handle token verification with invalid token', async () => {
+      const response = await request(app.getHttpServer())
+        .get('/api/auth/verify')
+        .set('Authorization', 'Bearer invalid-token');
 
-    describe('POST /api/list/lists', () => {
-      it('should require authentication for creating lists', () => {
-        return request(app.getHttpServer())
-          .post('/api/list/lists')
-          .send({
-            name: 'Test List',
-            type: 'todo',
-            color: '#ff0000',
-          })
-          .expect((res) => {
-            expect([401, 503]).toContain(res.status);
-          });
-      });
-    });
+      expect([401, 503]).toContain(response.status);
 
-    describe('GET /api/list/health', () => {
-      it('should return list service health', () => {
-        return request(app.getHttpServer())
-          .get('/api/list/health')
-          .expect((res) => {
-            // Should either return health status or service unavailable
-            expect([200, 503]).toContain(res.status);
-          });
-      });
+      if (response.status === 401) {
+        expect(response.body).toHaveProperty('message');
+        expect(typeof response.body.message).toBe('string');
+      }
     });
   });
 
-  describe('/api/list-items (List Items Controller)', () => {
-    describe('GET /api/list-items/:listId', () => {
-      it('should handle get list items request', () => {
-        const testListId = 'test-list-id';
-        return request(app.getHttpServer())
-          .get(`/api/list-items/${testListId}`)
-          .expect((res) => {
-            // Should either return items, not found, or service unavailable
-            expect([200, 404, 503]).toContain(res.status);
-          });
-      });
+  describe('List Management Endpoints', () => {
+    it('should handle get all lists request with proper response structure', async () => {
+      const response = await request(app.getHttpServer()).get('/api/list/lists');
+
+      expect([200, 503]).toContain(response.status);
+
+      if (response.status === 200) {
+        expect(Array.isArray(response.body)).toBe(true);
+
+        // If there are lists, validate their structure
+        if (response.body.length > 0) {
+          const firstList = response.body[0];
+          expect(firstList).toHaveProperty('id');
+          expect(firstList).toHaveProperty('name');
+          expect(typeof firstList.id).toBe('string');
+          expect(typeof firstList.name).toBe('string');
+        }
+      }
     });
 
-    describe('POST /api/list-items/:listId', () => {
-      it('should require authentication for creating items', () => {
-        const testListId = 'test-list-id';
-        return request(app.getHttpServer())
-          .post(`/api/list-items/${testListId}`)
-          .send({
-            name: 'Test Item',
-            description: 'Test description',
-          })
-          .expect((res) => {
-            expect([401, 503]).toContain(res.status);
-          });
+    it('should handle get specific list request with proper response structure', async () => {
+      const testListId = 'test-list-id';
+      const response = await request(app.getHttpServer()).get(`/api/list/lists/${testListId}`);
+
+      expect([200, 404, 503]).toContain(response.status);
+
+      if (response.status === 200) {
+        expect(response.body).toHaveProperty('id');
+        expect(response.body).toHaveProperty('name');
+        expect(typeof response.body.id).toBe('string');
+        expect(typeof response.body.name).toBe('string');
+        expect(response.body.id).toBe(testListId);
+      }
+
+      if (response.status === 404) {
+        expect(response.body).toHaveProperty('message');
+        expect(typeof response.body.message).toBe('string');
+      }
+    });
+
+    it('should require authentication for creating lists', async () => {
+      const response = await request(app.getHttpServer()).post('/api/list/lists').send({
+        name: 'Test List',
+        type: 'todo',
+        color: '#ff0000',
       });
+
+      expect([401, 503]).toContain(response.status);
+
+      if (response.status === 401) {
+        expect(response.body).toHaveProperty('message');
+        expect(typeof response.body.message).toBe('string');
+      }
     });
   });
 
-  describe('/api/profile (Profile Controller)', () => {
-    describe('GET /api/profile', () => {
-      it('should require authentication for profile access', () => {
-        return request(app.getHttpServer())
-          .get('/api/profile')
-          .expect((res) => {
-            expect([401, 503]).toContain(res.status);
-          });
-      });
+  describe('List Items Endpoints', () => {
+    it('should handle get list items request with proper response structure', async () => {
+      const testListId = 'test-list-id';
+      const response = await request(app.getHttpServer()).get(`/api/list-items/${testListId}`);
+
+      expect([200, 404, 503]).toContain(response.status);
+
+      if (response.status === 200) {
+        expect(Array.isArray(response.body)).toBe(true);
+
+        // If there are items, validate their structure
+        if (response.body.length > 0) {
+          const firstItem = response.body[0];
+          expect(firstItem).toHaveProperty('id');
+          expect(firstItem).toHaveProperty('name');
+          expect(typeof firstItem.id).toBe('string');
+          expect(typeof firstItem.name).toBe('string');
+        }
+      }
+
+      if (response.status === 404) {
+        expect(response.body).toHaveProperty('message');
+        expect(typeof response.body.message).toBe('string');
+      }
     });
 
-    describe('GET /api/profile/health', () => {
-      it('should return profile service health', () => {
-        return request(app.getHttpServer())
-          .get('/api/profile/health')
-          .expect((res) => {
-            expect([200, 503]).toContain(res.status);
-          });
+    it('should require authentication for creating items', async () => {
+      const testListId = 'test-list-id';
+      const response = await request(app.getHttpServer()).post(`/api/list-items/${testListId}`).send({
+        name: 'Test Item',
+        description: 'Test description',
       });
+
+      expect([401, 503]).toContain(response.status);
+
+      if (response.status === 401) {
+        expect(response.body).toHaveProperty('message');
+        expect(typeof response.body.message).toBe('string');
+      }
     });
   });
 
-  describe('Route not found', () => {
-    it('should return 404 for non-existent routes', () => {
-      return request(app.getHttpServer()).get('/api/non-existent-route').expect(404);
+  describe('Profile Endpoints', () => {
+    it('should require authentication for profile access', async () => {
+      const response = await request(app.getHttpServer()).get('/api/profile');
+
+      expect([401, 503]).toContain(response.status);
+
+      if (response.status === 401) {
+        expect(response.body).toHaveProperty('message');
+        expect(typeof response.body.message).toBe('string');
+      }
     });
   });
 
-  describe('HTTP Methods', () => {
-    it('should handle unsupported HTTP methods', () => {
-      return request(app.getHttpServer())
-        .patch('/api/health')
-        .expect((res) => {
-          expect([404, 405]).toContain(res.status);
-        });
+  describe('Error Handling', () => {
+    it('should return 404 for non-existent routes', async () => {
+      const response = await request(app.getHttpServer()).get('/api/non-existent-route').expect(404);
+
+      expect(response.body).toHaveProperty('message');
+      expect(typeof response.body.message).toBe('string');
+    });
+
+    it('should handle unsupported HTTP methods', async () => {
+      const response = await request(app.getHttpServer()).patch('/api/health');
+
+      expect([404, 405]).toContain(response.status);
+
+      if (response.status === 405) {
+        expect(response.body).toHaveProperty('message');
+        expect(typeof response.body.message).toBe('string');
+      }
     });
   });
 });
