@@ -221,7 +221,6 @@ describe('Authentication Flow E2E Tests', () => {
     it('should handle missing required fields in registration', async () => {
       const response = await request(app.getHttpServer()).post('/api/auth/register').send({
         email: 'incomplete@example.com',
-        // Missing password and username
       });
 
       expect([400, 503]).toContain(response.status);

@@ -40,7 +40,6 @@ describe('Gateway E2E Tests', () => {
       expect(services).toHaveProperty('list');
       expect(services).toHaveProperty('profile');
 
-      // Each service should have a boolean status
       Object.keys(services).forEach((serviceName) => {
         expect(typeof services[serviceName]).toBe('boolean');
       });
@@ -163,7 +162,6 @@ describe('Gateway E2E Tests', () => {
       if (response.status === 200) {
         expect(Array.isArray(response.body)).toBe(true);
 
-        // If there are lists, validate their structure
         if (response.body.length > 0) {
           const firstList = response.body[0];
           expect(firstList).toHaveProperty('id');
@@ -220,7 +218,6 @@ describe('Gateway E2E Tests', () => {
       if (response.status === 200) {
         expect(Array.isArray(response.body)).toBe(true);
 
-        // If there are items, validate their structure
         if (response.body.length > 0) {
           const firstItem = response.body[0];
           expect(firstItem).toHaveProperty('id');
