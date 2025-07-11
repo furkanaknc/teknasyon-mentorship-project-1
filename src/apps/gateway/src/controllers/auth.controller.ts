@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Logger, Post, Req, Res } from '@nestjs/common';
+import { Body, Controller, Get, Post, Req, Res } from '@nestjs/common';
 import { Public } from '@teknasyon/shared-auth';
 import { Request, Response } from 'express';
 
@@ -6,8 +6,6 @@ import { ProxyService } from '../app/proxy.service';
 
 @Controller('auth')
 export class AuthController {
-  private readonly logger = new Logger(AuthController.name);
-
   constructor(private readonly proxyService: ProxyService) {}
 
   @Public()

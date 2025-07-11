@@ -3,7 +3,7 @@ import { z } from 'zod';
 export const gatewayEnvSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   PORT: z.coerce.number().default(3000),
-  JWT_SECRET: z.string().min(16),
+  JWT_SECRET: z.string(),
 
   CORS_ORIGIN: z.string().optional(),
 
